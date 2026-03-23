@@ -14,6 +14,11 @@
 
 ---
 
+## WARNING
+
+- I'M NOT RESPONSIBLE FOR ANY DAMAGES
+- DO IT AT YOUR OWN RISK
+
 ## Build Instructions
 
 ### 1. Setup build environment (Ubuntu 20.04/22.04)
