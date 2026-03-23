@@ -14,11 +14,6 @@
 
 ---
 
-## WARNING
-
-- I'M NOT RESPONSIBLE FOR ANY DAMAGES
-- DO IT AT YOUR OWN RISK
-
 ## Build Instructions
 
 ### 1. Setup build environment (Ubuntu 20.04/22.04)
@@ -56,15 +51,7 @@ fastboot flash vendor_boot out/target/product/uke/vendor_boot.img
 ---
 
 ## Notes
-- This project haven't been tested do it at your own risk
 - This device uses Virtual A/B — recovery is embedded in `vendor_boot.img`
 - You need a prebuilt kernel placed at `device/xiaomi/uke/prebuilt/kernel`
-- Get the kernel from the LineageOS build for uke from here:
-- https://sourceforge.net/projects/irawansprojekt/files/uke/Android%2016/LineageOS/
+- Get the kernel from the LineageOS build for uke or compile from Xiaomi's kernel source
 - Decryption support included but may need vendor crypto libs to fully work
-
-
-## Credits
-
-- TWRP team for the recovery source
-- dodyirawan85 whose LineageOS tree helped as reference
