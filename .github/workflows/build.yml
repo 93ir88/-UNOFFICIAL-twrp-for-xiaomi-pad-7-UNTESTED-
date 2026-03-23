@@ -22,13 +22,13 @@ on:
 jobs:
   build:
     name: Build TWRP
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-20.04
     permissions:
       contents: write
     steps:
 
       - name: Checkout device tree
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
         with:
           path: device_tree
 
@@ -141,7 +141,7 @@ jobs:
           find twrp/out/target/product/uke/ -name "*.img" 2>/dev/null || echo "No images found"
 
       - name: Upload vendor_boot.img
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: TWRP-vendor_boot-uke
           path: twrp/out/target/product/uke/vendor_boot.img
@@ -149,7 +149,7 @@ jobs:
 
       - name: Upload build log (on failure)
         if: failure()
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: build-log
           path: twrp/build.log
