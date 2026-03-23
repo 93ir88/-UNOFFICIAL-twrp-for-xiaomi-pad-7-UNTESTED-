@@ -1,1 +1,1 @@
-THE REPO IN THE twrp_device_xiaomi_uke FOLDER
+## THIS PROJECT STILL HAVE NOT FINISHED THE REPO INSIDE THE twrp_device_xiaomi_uke FOLDER
