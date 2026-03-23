@@ -56,14 +56,14 @@ fastboot flash vendor_boot out/target/product/uke/vendor_boot.img
 ---
 
 ## Notes
-- this project haven't been tested do it at your own risk
+- This project haven't been tested do it at your own risk
 - This device uses Virtual A/B — recovery is embedded in `vendor_boot.img`
 - You need a prebuilt kernel placed at `device/xiaomi/uke/prebuilt/kernel`
 - Get the kernel from the LineageOS build for uke from here:
 - https://sourceforge.net/projects/irawansprojekt/files/uke/Android%2016/LineageOS/
 - Decryption support included but may need vendor crypto libs to fully work
 
-- 
+
 ## Credits
 
 - TWRP team for the recovery source
