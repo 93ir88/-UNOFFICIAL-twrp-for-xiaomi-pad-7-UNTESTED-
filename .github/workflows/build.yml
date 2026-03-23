@@ -73,22 +73,12 @@ jobs:
           mkdir -p twrp/device/xiaomi/uke/prebuilt
           cd twrp/device/xiaomi/uke/prebuilt
 
-          # Download GKI kernel 6.1 for arm64
-          # Build ID from device: android14-11
           GKI_URL="https://dl.google.com/android/gki/gki-certified-boot-android14-6.1-2024-01_r1.zip"
           echo "Downloading GKI kernel..."
           curl -L "$GKI_URL" -o gki.zip || true
 
-          # Try alternative: extract from AOSP CI
-          if [ ! -f gki.zip ] || [ $(stat -c%s gki.zip) -lt 1000 ]; then
-            echo "Trying alternative kernel source..."
-            curl -L "https://github.com/aosp-mirror/kernel_common/raw/android14-6.1/arch/arm64/boot/Image" \
-              -o kernel || true
-          fi
-
           if [ -f gki.zip ] && [ $(stat -c%s gki.zip) -gt 1000 ]; then
             unzip -o gki.zip "*.img" -d ./ || true
-            # Extract kernel from boot image
             BOOT_IMG=$(ls boot*.img 2>/dev/null | head -1)
             if [ -n "$BOOT_IMG" ]; then
               python3 - <<'PYEOF'
@@ -107,7 +97,6 @@ jobs:
           with open(boot_img, 'rb') as f:
               data = f.read()
 
-          # v3/v4 header
           kernel_size = struct.unpack_from('<I', data, 8)[0]
           header_size = struct.unpack_from('<I', data, 20)[0]
           page_size = 4096
@@ -122,7 +111,6 @@ jobs:
           PYEOF
             fi
           fi
-
           ls -la
 
       - name: Build TWRP vendor_boot
@@ -132,19 +120,28 @@ jobs:
           export BUILD_BROKEN_ELF_PREBUILT_PRODUCT_COPY_FILES=true
           . build/envsetup.sh
           lunch twrp_uke-eng
-          mka vendorbootimage -j$(nproc) 2>&1 | tee build.log
-          echo "Build finished with exit code: $?"
+          mka vendorbootimage 2>&1 | tee build.log
+          echo "Build exit code: $?"
 
       - name: Check output
         run: |
-          ls -lh twrp/out/target/product/uke/ 2>/dev/null || echo "Output dir not found"
-          find twrp/out/target/product/uke/ -name "*.img" 2>/dev/null || echo "No images found"
+          echo "=== All images ==="
+          find twrp/out/target/product/uke/ -name "*.img" -ls 2>/dev/null || echo "No images found"
+          echo "=== vendor_boot ==="
+          find twrp/out/ -name "vendor_boot*" -ls 2>/dev/null || echo "vendor_boot not found anywhere"
 
       - name: Upload vendor_boot.img
         uses: actions/upload-artifact@v4
         with:
           name: TWRP-vendor_boot-uke
           path: twrp/out/target/product/uke/vendor_boot.img
+          if-no-files-found: warn
+
+      - name: Upload all images (backup)
+        uses: actions/upload-artifact@v4
+        with:
+          name: TWRP-all-images-uke
+          path: twrp/out/target/product/uke/*.img
           if-no-files-found: warn
 
       - name: Upload build log (on failure)
