@@ -56,3 +56,9 @@ fastboot flash vendor_boot out/target/product/uke/vendor_boot.img
 - Get the kernel from the LineageOS build for uke here:
 - https://sourceforge.net/projects/irawansprojekt/files/uke/Android%2016/LineageOS/
 - Decryption support included but may need vendor crypto libs to fully work
+
+- 
+## Credits
+
+- TWRP team for the recovery source
+- dodyirawan85 whose LineageOS tree helped as reference
