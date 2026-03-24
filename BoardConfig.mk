@@ -36,15 +36,12 @@ BOARD_MKBOOTIMG_ARGS += --header_version $(BOARD_BOOT_HEADER_VERSION)
 BOARD_MKBOOTIMG_ARGS += --ramdisk_offset $(BOARD_RAMDISK_OFFSET)
 BOARD_MKBOOTIMG_ARGS += --tags_offset $(BOARD_KERNEL_TAGS_OFFSET)
 
-# GKI Kernel - prebuilt
-TARGET_PREBUILT_KERNEL := $(DEVICE_PATH)/prebuilt/kernel
-BOARD_PREBUILT_DTBOIMAGE := $(DEVICE_PATH)/prebuilt/dtbo.img
 
 TARGET_KERNEL_ARCH := arm64
 BOARD_KERNEL_IMAGE_NAME := Image
+TARGET_NO_KERNEL_OVERRIDE := true
 
 # Kernel modules
-TW_LOAD_VENDOR_MODULES := "qcom-wdt.ko adsp_loader_dlkm.ko"
 
 # Android Verified Boot
 BOARD_AVB_ENABLE := true
