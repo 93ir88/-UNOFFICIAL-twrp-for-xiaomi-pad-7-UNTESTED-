@@ -48,6 +48,50 @@ jobs:
           git config --global user.name "GitHub Actions"
           git config --global user.email "actions@github.com"
 
+      - name: Download prebuilts FIRST (before sync)
+        run: |
+          mkdir -p device_tree/prebuilt
+          cd device_tree/prebuilt
+
+          BASE="https://sourceforge.net/projects/irawansprojekt/files/uke/Android%2016/LineageOS/22%20October%202025"
+
+          echo "Downloading dtbo.img (will use as dtb.img)..."
+          curl -L "$BASE/dtbo.img/download" -o dtb.img --max-time 300 --retry 3
+          DTB_SIZE=$(stat -c%s dtb.img 2>/dev/null || echo 0)
+          echo "dtb.img size: $DTB_SIZE bytes"
+          if [ "$DTB_SIZE" -lt 1000 ]; then
+            echo "ERROR: dtb.img download failed or too small!"
+            exit 1
+          fi
+
+          echo "Downloading boot.img for kernel..."
+          curl -L "$BASE/boot.img/download" -o boot.img --max-time 300 --retry 3
+          BOOT_SIZE=$(stat -c%s boot.img 2>/dev/null || echo 0)
+          echo "boot.img size: $BOOT_SIZE bytes"
+
+          if [ "$BOOT_SIZE" -gt 1000000 ]; then
+            python3 - <<'PYEOF'
+          import struct, os, sys
+          with open('boot.img', 'rb') as f:
+              data = f.read()
+          kernel_size = struct.unpack_from('<I', data, 8)[0]
+          header_size = struct.unpack_from('<I', data, 20)[0]
+          page_size = 4096
+          kernel_offset = ((header_size + page_size - 1) // page_size) * page_size
+          print(f"Kernel size: {kernel_size}, offset: {kernel_offset}")
+          if kernel_size > 0:
+              with open('kernel', 'wb') as f:
+                  f.write(data[kernel_offset:kernel_offset + kernel_size])
+              print(f"Kernel extracted: {kernel_size} bytes")
+          else:
+              print("Kernel size 0, skipping")
+          PYEOF
+          fi
+
+          rm -f boot.img
+          echo "=== Prebuilt contents ==="
+          ls -lh
+
       - name: Initialize TWRP manifest
         run: |
           mkdir -p twrp
@@ -61,62 +105,8 @@ jobs:
         run: |
           mkdir -p twrp/device/xiaomi/uke
           cp -r device_tree/* twrp/device/xiaomi/uke/
-
-      - name: Download prebuilts from SourceForge
-        run: |
-          mkdir -p twrp/device/xiaomi/uke/prebuilt
-          cd twrp/device/xiaomi/uke/prebuilt
-
-          BASE="https://sourceforge.net/projects/irawansprojekt/files/uke/Android%2016/LineageOS/22%20October%202025"
-
-          echo "Downloading boot.img (for kernel)..."
-          curl -L "$BASE/boot.img/download" -o boot.img --max-time 300
-          echo "boot.img size: $(stat -c%s boot.img 2>/dev/null || echo 0)"
-
-          echo "Downloading dtbo.img..."
-          curl -L "$BASE/dtbo.img/download" -o dtbo.img --max-time 300
-          echo "dtbo.img size: $(stat -c%s dtbo.img 2>/dev/null || echo 0)"
-
-          echo "Extracting kernel from boot.img..."
-          python3 - <<'PYEOF'
-          import struct, os, sys
-
-          if not os.path.exists('boot.img'):
-              print("boot.img not found!")
-              sys.exit(1)
-
-          with open('boot.img', 'rb') as f:
-              data = f.read()
-
-          magic = data[:8]
-          print(f"Magic: {magic}")
-
-          # v3/v4 GKI header
-          kernel_size = struct.unpack_from('<I', data, 8)[0]
-          header_size = struct.unpack_from('<I', data, 20)[0]
-          page_size = 4096
-          kernel_offset = ((header_size + page_size - 1) // page_size) * page_size
-
-          print(f"Kernel size: {kernel_size}, offset: {kernel_offset}")
-
-          if kernel_size > 0:
-              with open('kernel', 'wb') as f:
-                  f.write(data[kernel_offset:kernel_offset + kernel_size])
-              print(f"Kernel extracted: {kernel_size} bytes")
-          else:
-              print("Kernel size is 0!")
-              sys.exit(1)
-          PYEOF
-
-          # dtbo.img contains the DTB, rename it to dtb.img
-          if [ -f dtbo.img ] && [ $(stat -c%s dtbo.img) -gt 1000 ]; then
-            cp dtbo.img dtb.img
-            echo "DTB ready: $(stat -c%s dtb.img) bytes"
-          fi
-
-          rm -f boot.img
-          echo "=== Prebuilt contents ==="
-          ls -lh
+          echo "=== Verifying prebuilts in build tree ==="
+          ls -lh twrp/device/xiaomi/uke/prebuilt/
 
       - name: Build TWRP vendor_boot
         run: |
