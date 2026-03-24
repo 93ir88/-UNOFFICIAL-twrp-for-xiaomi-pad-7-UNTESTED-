@@ -62,87 +62,6 @@ jobs:
           mkdir -p twrp/device/xiaomi/uke
           cp -r device_tree/* twrp/device/xiaomi/uke/
 
-      - name: Download kernel from LineageOS build
-        run: |
-          mkdir -p twrp/device/xiaomi/uke/prebuilt
-          cd twrp/device/xiaomi/uke/prebuilt
-
-          echo "Downloading LineageOS zip for kernel extraction..."
-          # LineageOS build for uke contains the kernel
-          curl -L "https://sourceforge.net/projects/irawansprojekt/files/uke/Android%2016/LineageOS/22%20October%202025/lineage-23.0-20251022-UNOFFICIAL-uke.zip/download" \
-            -o lineage.zip --max-time 600 || true
-
-          if [ -f lineage.zip ] && [ $(stat -c%s lineage.zip) -gt 1000000 ]; then
-            echo "Extracting kernel from LineageOS zip..."
-            unzip -o lineage.zip "boot.img" -d ./ 2>/dev/null || \
-            unzip -o lineage.zip "*boot*" -d ./ 2>/dev/null || true
-
-            BOOT_IMG=$(find . -name "boot.img" 2>/dev/null | head -1)
-            if [ -n "$BOOT_IMG" ]; then
-              python3 - <<'PYEOF'
-          import struct, os
-
-          boot_img = None
-          for root, dirs, files in os.walk('.'):
-              for f in files:
-                  if f == 'boot.img':
-                      boot_img = os.path.join(root, f)
-                      break
-
-          if not boot_img:
-              print("boot.img not found")
-              exit(1)
-
-          print(f"Found: {boot_img}")
-          with open(boot_img, 'rb') as f:
-              data = f.read()
-
-          magic = data[:8]
-          print(f"Magic: {magic}")
-
-          # v3/v4
-          kernel_size = struct.unpack_from('<I', data, 8)[0]
-          header_size = struct.unpack_from('<I', data, 20)[0]
-          page_size = 4096
-          kernel_offset = ((header_size + page_size - 1) // page_size) * page_size
-
-          print(f"Kernel size: {kernel_size}, offset: {kernel_offset}")
-
-          if kernel_size > 0:
-              with open('kernel', 'wb') as f:
-                  f.write(data[kernel_offset:kernel_offset + kernel_size])
-              print(f"Kernel extracted successfully: {kernel_size} bytes")
-          else:
-              print("Kernel size is 0!")
-          PYEOF
-            fi
-            rm -f lineage.zip
-          else
-            echo "Download failed or file too small, trying GKI fallback..."
-            curl -L "https://dl.google.com/android/gki/gki-certified-boot-android14-6.1-2024-01_r1.zip" \
-              -o gki.zip || true
-            if [ -f gki.zip ] && [ $(stat -c%s gki.zip) -gt 1000 ]; then
-              unzip -o gki.zip "*.img" -d ./ || true
-              BOOT_IMG=$(ls boot*.img 2>/dev/null | head -1)
-              if [ -n "$BOOT_IMG" ]; then
-                python3 - <<'PYEOF2'
-          import struct, os
-          boot_img = [f for f in os.listdir('.') if f.startswith('boot') and f.endswith('.img')][0]
-          with open(boot_img, 'rb') as f: data = f.read()
-          kernel_size = struct.unpack_from('<I', data, 8)[0]
-          header_size = struct.unpack_from('<I', data, 20)[0]
-          kernel_offset = ((header_size + 4095) // 4096) * 4096
-          if kernel_size > 0:
-              with open('kernel', 'wb') as f: f.write(data[kernel_offset:kernel_offset+kernel_size])
-              print(f"GKI kernel extracted: {kernel_size} bytes")
-          PYEOF2
-              fi
-            fi
-          fi
-
-          echo "=== Prebuilt contents ==="
-          ls -lh
-
       - name: Build TWRP vendor_boot
         run: |
           cd twrp
@@ -157,8 +76,6 @@ jobs:
         run: |
           echo "=== All images ==="
           find twrp/out/target/product/uke/ -name "*.img" -ls 2>/dev/null || echo "No images found"
-          echo "=== vendor_boot ==="
-          find twrp/out/ -name "vendor_boot*" -ls 2>/dev/null || echo "Not found"
 
       - name: Upload vendor_boot.img
         uses: actions/upload-artifact@v4
