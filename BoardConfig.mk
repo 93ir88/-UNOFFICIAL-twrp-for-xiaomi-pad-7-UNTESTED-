@@ -41,6 +41,11 @@ TARGET_KERNEL_ARCH := arm64
 BOARD_KERNEL_IMAGE_NAME := Image
 TARGET_NO_KERNEL_OVERRIDE := true
 
+# DTB
+BOARD_INCLUDE_DTB_IN_BOOTIMG := true
+BOARD_PREBUILT_DTBIMAGE_DIR := $(DEVICE_PATH)/prebuilt
+TARGET_PREBUILT_DTB := $(DEVICE_PATH)/prebuilt/dtb.img
+
 # Kernel modules
 
 # Android Verified Boot
